@@ -21,8 +21,8 @@ struct EvReset : sc::event< EvReset >
 {
 };
 
-struct StateContext;
-struct StopWatch : sc::state_machine< StopWatch, StateContext >
+struct Active;
+struct StopWatch : sc::state_machine< StopWatch, Active >
 {
 	double ElapsedTime() const
 	{
@@ -32,19 +32,19 @@ struct StopWatch : sc::state_machine< StopWatch, StateContext >
 
 struct Stopped;
 
-struct StateContext : sc::simple_state<StateContext, StopWatch, Stopped >
+struct Active : sc::simple_state<Active, StopWatch, Stopped >
 {
 public:
-	using reactions = sc::transition< EvReset, StateContext >;
+	using reactions = sc::transition< EvReset, Active >;
 public:
-	StateContext() : elapsedTime_(0.0) {}
+	Active() : elapsedTime_(0.0) {}
 	double ElapsedTime() const { return elapsedTime_; }
 	double& ElapsedTime() { return elapsedTime_; }
 private:
 	double elapsedTime_;
 };
 
-struct Running : IElapsedTime, sc::simple_state< Running, StateContext >
+struct Running : IElapsedTime, sc::simple_state< Running, Active >
 {
 public:
 	using reactions = sc::transition< EvStartStop, Stopped >;
@@ -53,12 +53,12 @@ public:
 	Running() : startTime_(std::time(0)) {}
 	virtual ~Running() override
 	{
-		context<StateContext>().ElapsedTime() = ElapsedTime();
+		context<Active>().ElapsedTime() = ElapsedTime();
 	}
 
 	virtual double ElapsedTime() const override
 	{
-		return context< StateContext >().ElapsedTime() +
+		return context< Active >().ElapsedTime() +
 			std::difftime(std::time(0), startTime_);
 	}
 
@@ -66,13 +66,13 @@ private:
 	std::time_t startTime_;
 };
 
-struct Stopped : IElapsedTime, sc::simple_state< Stopped, StateContext >
+struct Stopped : IElapsedTime, sc::simple_state< Stopped, Active >
 {
 	using reactions = sc::transition< EvStartStop, Running >;
 
 	virtual double ElapsedTime() const override
 	{
-		return context< StateContext >().ElapsedTime();
+		return context< Active >().ElapsedTime();
 	}
 };
 
