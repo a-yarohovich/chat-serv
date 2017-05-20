@@ -28,9 +28,8 @@ statechart::result Stopped_State::react(const EvInitStart&)
 Init_State::Init_State(my_context ctx) : my_base(ctx)
 {
 	LOG_FUNC;
-	IServerConfigPtr spConf(new ServerConfig);
-	spConf->ListPort(8550);
-	context<ServerListener>().Config(spConf);
+	IServerConfigPtr spConf(new ServerConfig());
+	context<ServerListener>().config(spConf);
 	post_event(EvInitDone());
 }
 
@@ -51,11 +50,21 @@ statechart::result Init_State::react(const EvStop &)
 	return transit< Stopped_State >();
 }
 
+statechart::result Init_State::react(const EvConfigReaded &)
+{
+	return react(EvInitDone());
+}
+
 //////////////////////////////////////////////////////////////////////////
 
-Running_State::Running_State()
+Running_State::Running_State(my_context ctx) : my_base(ctx)
 {
 	LOG_FUNC;
+	IServerConfigPtr config;
+	if (config = context<ServerListener>().config())
+	{
+		run_listening(config->listen_port());
+	}	
 }
 
 Running_State::~Running_State()
@@ -81,12 +90,18 @@ statechart::result Running_State::react(const EvMessage&)
 	return discard_event();
 }
 
-IServerConfigPtr& ServerListener::Config()
+void Running_State::run_listening(const size_t listen_port)
+{
+	std::cout << "run listenig port:" << listen_port << std::endl;
+	//using boost:asio
+}
+
+IServerConfigPtr& ServerListener::config()
 {
 	return spServConfig;
 }
 
-void ServerListener::Config(const IServerConfigPtr& spConf)
+void ServerListener::config(const IServerConfigPtr& spConf)
 {
 	spServConfig = spConf;
 }

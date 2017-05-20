@@ -22,8 +22,8 @@ class Stopped_State;
 class ServerListener : public statechart::state_machine < ServerListener, Stopped_State >
 {
 public:
-	IServerConfigPtr& Config();
-	void Config(const IServerConfigPtr& spConf);
+	IServerConfigPtr& config();
+	void config(const IServerConfigPtr& spConf);
 private:
 	IServerConfigPtr spServConfig;
 };
@@ -43,15 +43,17 @@ class Init_State : public statechart::state < Init_State, ServerListener >
 public:
 	using reactions = mpl::list <
 		statechart::custom_reaction< EvInitDone >,
-		statechart::custom_reaction< EvStop > >;
+		statechart::custom_reaction< EvStop >,
+		statechart::custom_reaction< EvConfigReaded > >;
 public:
 	Init_State(my_context ctx);
 	~Init_State();
 	statechart::result react(const EvInitDone&);
 	statechart::result react(const EvStop&);
+	statechart::result react(const EvConfigReaded&);
 };
 
-class Running_State : public statechart::simple_state < Running_State, ServerListener >
+class Running_State : public statechart::state < Running_State, ServerListener >
 {
 public:
 	using reactions = mpl::list <
@@ -59,11 +61,13 @@ public:
 		statechart::custom_reaction< EvStop >,
 		statechart::custom_reaction< EvMessage > >;
 public:
-	Running_State();
+	Running_State(my_context ctx);
 	~Running_State();
 	statechart::result react(const EvInitStart&);
 	statechart::result react(const EvStop&);
 	statechart::result react(const EvMessage&);
+private:
+	void run_listening(const size_t listen_port);
 };
 
 }
