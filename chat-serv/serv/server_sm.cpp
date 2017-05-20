@@ -1,13 +1,30 @@
 #include <iostream>
+#include <boost/asio.hpp>
+#include <ctime>
 
 #include "events.h"
 #include "config.h"
 #include "server_sm.h"
 
 #define LOG_FUNC std::cout << __FUNCTION__ << std::endl
+namespace
+{
+
+std::string make_daytime_string()
+{
+	using namespace std; // For time_t, time and ctime;
+	time_t now = time(0);
+	return ctime(&now);
+}
+
+}
 
 namespace server
 {
+
+//////////////////////////////////////////////////////////////////////////
+//						Stopped_State									//
+//////////////////////////////////////////////////////////////////////////
 
 Stopped_State::Stopped_State()
 {
@@ -23,6 +40,8 @@ statechart::result Stopped_State::react(const EvInitStart&)
 	return transit< Init_State >();
 }
 
+//////////////////////////////////////////////////////////////////////////
+//						Init_State										//
 //////////////////////////////////////////////////////////////////////////
 
 Init_State::Init_State(my_context ctx) : my_base(ctx)
@@ -55,6 +74,8 @@ statechart::result Init_State::react(const EvConfigReaded &)
 	return react(EvInitDone());
 }
 
+//////////////////////////////////////////////////////////////////////////
+//						Running_State									//
 //////////////////////////////////////////////////////////////////////////
 
 Running_State::Running_State(my_context ctx) : my_base(ctx)
@@ -92,8 +113,26 @@ statechart::result Running_State::react(const EvMessage&)
 
 void Running_State::run_listening(const size_t listen_port)
 {
+	using boost::asio::ip::tcp;
 	std::cout << "run listenig port:" << listen_port << std::endl;
-	//using boost:asio
+	try
+	{
+		boost::asio::io_service io_service;
+		tcp::acceptor acceptor(io_service, tcp::endpoint(tcp::v4(), listen_port));
+		for (;;)
+		{
+			tcp::socket socket(io_service);
+			acceptor.accept(socket);
+			std::string message = make_daytime_string();
+
+			boost::system::error_code ignored_error;
+			boost::asio::write(socket, boost::asio::buffer(message), ignored_error);
+		}
+	}
+	catch (std::exception& e)
+	{
+		std::cerr << e.what() << std::endl;
+	}
 }
 
 IServerConfigPtr& ServerListener::config()
