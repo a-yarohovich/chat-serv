@@ -67,7 +67,7 @@ public:
 	statechart::result react(const EvStop&);
 	statechart::result react(const EvMessage&);
 private:
-	void run_listening(const size_t listen_port);
+	void run_listening(const unsigned short listen_port);
 };
 
 }

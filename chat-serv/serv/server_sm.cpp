@@ -7,6 +7,7 @@
 #include "server_sm.h"
 
 #define LOG_FUNC std::cout << __FUNCTION__ << std::endl
+
 namespace
 {
 
@@ -111,7 +112,7 @@ statechart::result Running_State::react(const EvMessage&)
 	return discard_event();
 }
 
-void Running_State::run_listening(const size_t listen_port)
+void Running_State::run_listening(const unsigned short listen_port)
 {
 	using boost::asio::ip::tcp;
 	std::cout << "run listenig port:" << listen_port << std::endl;
